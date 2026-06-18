@@ -144,10 +144,17 @@ export default class Storage {
     this._$dataGrid = $container.find(c('.data-grid'))
     this._$filterText = $container.find(c('.filter-text'))
   }
+  _getStore() {
+    return this._type === 'local' ? localStorage : sessionStorage
+  }
   _getVal(key) {
-    return this._type === 'local'
-      ? localStorage.getItem(key)
-      : sessionStorage.getItem(key)
+    return this._getStore().getItem(key)
+  }
+  _setVal(key, val) {
+    this._getStore().setItem(key, val)
+  }
+  _removeVal(key) {
+    this._getStore().removeItem(key)
   }
   _updateGridHeight = (scale) => {
     this._dataGrid.setOption({
@@ -156,7 +163,6 @@ export default class Storage {
     })
   }
   _bindEvent() {
-    const type = this._type
     const devtools = this._devtools
 
     this._$container
@@ -166,11 +172,7 @@ export default class Storage {
       })
       .on('click', c('.clear-storage'), () => {
         each(this._storeData, (val) => {
-          if (type === 'local') {
-            localStorage.removeItem(val.key)
-          } else {
-            sessionStorage.removeItem(val.key)
-          }
+          this._removeVal(val.key)
         })
         this.refresh()
       })
@@ -195,12 +197,7 @@ export default class Storage {
         LunaModal.prompt('Edit value', this._getVal(key)).then((val) => {
           if (isNull(val)) return
 
-          if (type === 'local') {
-            localStorage.setItem(key, val)
-          } else {
-            sessionStorage.setItem(key, val)
-          }
-
+          this._setVal(key, val)
           devtools.notify('Edited', { icon: 'success' })
           this.refresh()
         })
@@ -216,12 +213,7 @@ export default class Storage {
       .on('click', c('.delete-storage'), () => {
         const key = this._selectedItem
 
-        if (type === 'local') {
-          localStorage.removeItem(key)
-        } else {
-          sessionStorage.removeItem(key)
-        }
-
+        this._removeVal(key)
         this.refresh()
       })
 
