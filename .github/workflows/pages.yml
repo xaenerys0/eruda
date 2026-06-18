@@ -3,7 +3,7 @@ name: Deploy to Pages
 on:
   push:
     branches:
-      - claude/resources-local-storage-edit-a4v9bt
+      - master
   workflow_dispatch:
 
 permissions:
