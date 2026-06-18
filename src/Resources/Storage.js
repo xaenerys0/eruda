@@ -91,16 +91,19 @@ export default class Storage {
   _updateButtons() {
     const $container = this._$container
     const $showDetail = $container.find(c('.show-detail'))
+    const $editStorage = $container.find(c('.edit-storage'))
     const $deleteStorage = $container.find(c('.delete-storage'))
     const $copyStorage = $container.find(c('.copy-storage'))
     const btnDisabled = c('btn-disabled')
 
     $showDetail.addClass(btnDisabled)
+    $editStorage.addClass(btnDisabled)
     $deleteStorage.addClass(btnDisabled)
     $copyStorage.addClass(btnDisabled)
 
     if (this._selectedItem) {
       $showDetail.rmClass(btnDisabled)
+      $editStorage.rmClass(btnDisabled)
       $deleteStorage.rmClass(btnDisabled)
       $copyStorage.rmClass(btnDisabled)
     }
@@ -121,6 +124,9 @@ export default class Storage {
       <div class="btn copy-storage btn-disabled">
         <span class="icon icon-copy"></span>
       </div>
+      <div class="btn edit-storage btn-disabled">
+        <span class="icon icon-reset"></span>
+      </div>
       <div class="btn delete-storage btn-disabled">
         <span class="icon icon-delete"></span>
       </div>
@@ -138,10 +144,17 @@ export default class Storage {
     this._$dataGrid = $container.find(c('.data-grid'))
     this._$filterText = $container.find(c('.filter-text'))
   }
+  _getStore() {
+    return this._type === 'local' ? localStorage : sessionStorage
+  }
   _getVal(key) {
-    return this._type === 'local'
-      ? localStorage.getItem(key)
-      : sessionStorage.getItem(key)
+    return this._getStore().getItem(key)
+  }
+  _setVal(key, val) {
+    this._getStore().setItem(key, val)
+  }
+  _removeVal(key) {
+    this._getStore().removeItem(key)
   }
   _updateGridHeight = (scale) => {
     this._dataGrid.setOption({
@@ -150,7 +163,6 @@ export default class Storage {
     })
   }
   _bindEvent() {
-    const type = this._type
     const devtools = this._devtools
 
     this._$container
@@ -160,11 +172,7 @@ export default class Storage {
       })
       .on('click', c('.clear-storage'), () => {
         each(this._storeData, (val) => {
-          if (type === 'local') {
-            localStorage.removeItem(val.key)
-          } else {
-            sessionStorage.removeItem(val.key)
-          }
+          this._removeVal(val.key)
         })
         this.refresh()
       })
@@ -183,6 +191,17 @@ export default class Storage {
         copy(this._getVal(key))
         devtools.notify('Copied', { icon: 'success' })
       })
+      .on('click', c('.edit-storage'), () => {
+        const key = this._selectedItem
+
+        LunaModal.prompt('Edit value', this._getVal(key)).then((val) => {
+          if (isNull(val)) return
+
+          this._setVal(key, val)
+          devtools.notify('Edited', { icon: 'success' })
+          this.refresh()
+        })
+      })
       .on('click', c('.filter'), () => {
         LunaModal.prompt('Filter').then((filter) => {
           if (isNull(filter)) return
@@ -194,12 +213,7 @@ export default class Storage {
       .on('click', c('.delete-storage'), () => {
         const key = this._selectedItem
 
-        if (type === 'local') {
-          localStorage.removeItem(key)
-        } else {
-          sessionStorage.removeItem(key)
-        }
-
+        this._removeVal(key)
         this.refresh()
       })
 
